@@ -1,0 +1,41 @@
+# ----------------------------------------------------------------------
+# /boot/zrbl/boot.cfz - ملف إعداد ZRBL الرئيسي
+# هذا الملف يحدد خيارات الإقلاع التي سيعرضها ZRBL للمستخدم.
+# ----------------------------------------------------------------------
+
+# الإدخال الأول: نظام Linux الأساسي
+[entry]
+    # الاسم الذي سيظهر في قائمة ZRBL
+    name=ZRBL Linux Main OS
+
+    # نوع الإدخال (kernel: للإقلاع المباشر للنواة، chain: للتحويل إلى بوت لودر آخر)
+    type=kernel
+
+    # المسار إلى ملف النواة (نستخدم المسار الذي حددته)
+    kernel_path=/bin/vmlinuz
+    
+    # المسار إلى Init Ram Disk (اختياري)
+    initrd_path=/boot/initrd.img
+
+    # خيارات سطر الأوامر التي يتم تمريرها إلى النواة
+    cmdline=root=/dev/sda1 ro quiet console=tty0
+[end]
+
+# الإدخال الثاني: وضع صيانة (اختياري)
+[entry]
+    name=ZRBL Maintenance Mode
+    type=kernel
+    kernel_path=/bin/vmlinuz
+    initrd_path=/boot/initrd.img.recovery
+    cmdline=root=/dev/sda1 ro single
+[end]
+
+# الإدخال الثالث: تحويل الإقلاع إلى بوت لودر Windows (مثال)
+[entry]
+    name=Chainload Windows
+    type=chain
+    # رقم محرك الأقراص ونقطة التحميل (يجب أن يتم تحديدها بالقطاع أو القسم)
+    chain_device=hd0
+    chain_sector=0x80
+[end]
+
