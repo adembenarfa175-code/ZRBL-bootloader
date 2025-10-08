@@ -1,21 +1,15 @@
 ; boot.asm - The very first stage, sets up stack and calls zrbl_main()
 
-[bits 32] ; We run in 32-bit protected mode
+[bits 32] 
 
-extern zrbl_main  ; Entry point in command-cfz.c
+extern zrbl_main  
 
 section .text
 global _start
 
 _start:
-    ; Set up a minimal stack
-    mov esp, 0x90000 ; Stack starts high in memory
+    mov esp, 0x90000 
     
-    ; Setup global variables (simulating BIOS boot)
-    ; mov [g_boot_mode], 0x0 ; BOOT_MODE_BIOS
-    ; mov [g_active_drive], 0x80
-    
-    ; Call the main C function
     call zrbl_main
     
 .halt:
@@ -23,11 +17,19 @@ _start:
     hlt
 
 section .bss
-; Global variable declarations (to be linked with C code)
+; Global variable declarations (must match C code)
 global g_partition_start_lba
 global g_active_drive
 global g_boot_mode
+global g_fat_start_lba
+global g_data_start_lba
+global g_clusters_count
+global g_fat_type
 
 g_partition_start_lba: resd 1
 g_active_drive: resb 1
 g_boot_mode: resb 1
+g_fat_start_lba: resd 1
+g_data_start_lba: resd 1
+g_clusters_count: resd 1
+g_fat_type: resb 1

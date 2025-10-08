@@ -28,7 +28,7 @@ char* zrbl_strncpy(char* dest, const char* src, size_t n);
 void zrbl_puts(const char* s);
 
 // ===================================================
-// 3. Global Boot Environment (UEFI/BIOS Mode & FAT Globals)
+// 3. Global Boot Environment & FAT Globals
 // ===================================================
 
 typedef enum {
@@ -41,17 +41,16 @@ extern boot_mode_t g_boot_mode;
 extern uint32_t g_partition_start_lba;
 extern uint8_t g_active_drive;
 
-// ** New FAT Global Declarations for Security (v2025.3.2.0) **
+// CRITICAL FAT GLOBALS for secure bounds checking
 extern uint32_t g_fat_start_lba;
 extern uint32_t g_data_start_lba;
-extern uint32_t g_clusters_count; // CRITICAL for Bounds Checking
-extern uint8_t g_fat_type;
+extern uint32_t g_clusters_count; 
+extern uint8_t g_fat_type; 
 
 // ===================================================
 // 4. File System Structures (FAT) - With CRITICAL Security Fix
 // ===================================================
 
-// CRITICAL MEMORY ALIGNMENT FIX: __attribute__((packed))
 typedef struct __attribute__((packed)) {
     uint8_t filename[8];    
     uint8_t extension[3];   
@@ -69,12 +68,17 @@ typedef struct __attribute__((packed)) {
 } FAT_DirEntry;
 
 // ===================================================
-// 5. File System Functions
+// 5. File System and Parser Functions (v2025.3.3.0)
 // ===================================================
+
+#define CFG_MAX_VALUE_LEN 128 // Max length for config values
 
 int fat_init(uint8_t drive_id, uint32_t part_start_lba);
 FAT_DirEntry* fat_find_file(const char* filename);
-// New Function (v2025.3.2.0)
 uint32_t fat_get_next_cluster(uint32_t cluster);
+
+// NEW: Secure Configuration Parser
+int cfz_parse_line(const char* line, char* key, char* value);
+
 
 #endif // ZRBL_COMMON_H

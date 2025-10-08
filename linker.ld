@@ -4,7 +4,7 @@ ENTRY(_start)
 OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS {
-    . = 0x7E00; /* Start address after the VBR (Volume Boot Record) */
+    . = 0x7E00; 
 
     .text : {
         *(.text)
