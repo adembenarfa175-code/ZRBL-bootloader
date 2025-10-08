@@ -1,3 +1,3 @@
-## ZRBL Bootloader Version 2025.2.0.0
+## ZRBL Bootloader GPLv3 Version 2025.2.0.0
 
 ZRBL (Zahra Boot Loader) is an ambitious project...
