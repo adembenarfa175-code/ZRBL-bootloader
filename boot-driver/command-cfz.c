@@ -1,40 +1,32 @@
 // boot-driver/command-cfz.c - The main C function for ZRBL
 
 #include "zrbl_common.h"
-// #include "fat.h"
-// #include "ext4.h"
 
-// Define global variables (required by zrbl_common.h)
+// Define global variables
 uint32_t g_partition_start_lba = 0;
-uint8_t g_active_drive = 0x80; // First hard drive (BIOS convention)
-
-// Global state variable for boot environment
-// Must be initialized by Assembly/UEFI entry code
+uint8_t g_active_drive = 0x80; 
 boot_mode_t g_boot_mode = BOOT_MODE_UNKNOWN; 
 
-// The primary C entry point, called from boot.asm or UEFI code
 void zrbl_main() {
-    // 1. Display version information
-    zrbl_puts("ZRBL Bootloader - Version 2025.3.0.0 (Secure Init)\n");
-    zrbl_puts("Initializing, focusing on secure memory and dual boot mode...\n");
-
-    // 2. Check and report the boot mode
+    zrbl_puts("ZRBL Bootloader - Version 2025.3.1.0 (Secure)\n");
+    
     if (g_boot_mode == BOOT_MODE_BIOS) {
         zrbl_puts("INFO: Running in BIOS/Legacy Mode.\n");
     } else if (g_boot_mode == BOOT_MODE_UEFI) {
         zrbl_puts("INFO: Running in UEFI Mode (Future Support).\n");
-    } else {
-        zrbl_puts("WARN: Boot Mode UNKNOWN. Proceeding with caution.\n");
     }
 
-    // 3. File System Initialization
-    // fat_init(g_active_drive, g_partition_start_lba);
+    // 1. Initialize File System (FAT)
+    fat_init(g_active_drive, g_partition_start_lba);
     
-    // 4. Critical File Search (e.g., "boot.cfz")
-    // FAT_DirEntry* boot_config = fat_find_file("BOOT.CFZ");
-
-    // Infinite loop (Halt if kernel loading fails)
-    while (1) {
-        // ...
+    // 2. Search for configuration file (BOOT.CFZ)
+    FAT_DirEntry* boot_config = fat_find_file("BOOT.CFZ");
+    
+    if (boot_config != NULL) {
+        zrbl_puts("INFO: BOOT.CFZ found securely.\n");
+    } else {
+        zrbl_puts("ERROR: BOOT.CFZ not found or invalid.\n");
     }
+    
+    while (1) { /* Halt */ }
 }

@@ -2,49 +2,70 @@
 
 #include "zrbl_common.h"
 
-// Global variables for FAT partition data (crucial for Bounds Checking)
-// extern uint32_t g_total_sectors; // Example: total sectors in partition
-// extern uint16_t g_root_dir_sectors;
+// Placeholder for partition data
+// extern uint32_t g_total_sectors; 
 
-/**
- * Secure sector read function.
- * Must ensure the LBA is within the partition bounds to prevent OOB Read.
- * @param lba: Logical Block Address relative to the partition start.
- * @param buffer: 512-byte buffer for the sector data.
- */
 int fat_read_sector(uint32_t lba, void* buffer) {
-    // ********* CRITICAL SECURITY CHECK *********
-    // 1. Check against the partition's maximum sector count (g_total_sectors)
-    // if (lba >= g_total_sectors) { return -1; }
-    
-    // 2. Calculate the absolute LBA using g_partition_start_lba
-    // uint32_t absolute_lba = g_partition_start_lba + lba;
-    
-    // ... (Disk I/O Assembly/BIOS call goes here) ...
-    
-    return 0; // Success
+    // CRITICAL SECURITY CHECK (OOB Read prevention) would be here
+    // ...
+    return 0; 
 }
 
-/**
- * Primary FAT initialization function.
- * Reads the Boot Parameter Block (BPB) securely.
- */
 int fat_init(uint8_t drive_id, uint32_t part_start_lba) {
-    // Code to read BPB and validate all critical fields (e.g., sector size, FAT size)
-    // Validation is key to prevent crashes and exploits from malformed file systems.
-    
     zrbl_puts("INFO: FAT initialization complete.\n");
     return 0;
 }
 
-/**
- * FAT_DirEntry* fat_find_file(const char* filename)
- * CRITICAL FUNCTION: Searches for a file in the root directory securely.
- * Implementation will be added in the next step, focusing on name validation
- * and safe directory traversal to prevent buffer overflows.
- */
+// Helper: Safely normalizes filename to FAT 8.3 format (CRITICAL for security)
+static void fat_normalize_name(const char* src_name, char* dest_name) {
+    int i, j;
+    zrbl_memset(dest_name, ' ', 11);
+
+    for (i = 0; i < 8 && src_name[i] != '.' && src_name[i] != '\0'; i++) {
+        dest_name[i] = src_name[i];
+    }
+
+    if (src_name[i] == '.') {
+        i++; 
+        for (j = 8; j < 11 && src_name[i] != '\0'; j++, i++) {
+            dest_name[j] = src[i];
+        }
+    }
+
+    for (i = 0; i < 11; i++) {
+        if (dest_name[i] >= 'a' && dest_name[i] <= 'z') {
+            dest_name[i] -= ('a' - 'A');
+        }
+    }
+}
+
+// Helper: Safely calculates the full 32-bit first cluster (CRITICAL for security)
+static uint32_t fat_get_first_cluster(const FAT_DirEntry* entry) {
+    uint32_t cluster = (uint32_t)entry->first_cluster_high << 16 | entry->first_cluster_low;
+    
+    // CRITICAL SECURITY CHECK: Reserved/Invalid cluster IDs
+    if (cluster < 2) {
+        return 0; 
+    }
+    
+    return cluster;
+}
+
 FAT_DirEntry* fat_find_file(const char* filename) {
-    zrbl_puts("DEBUG: Starting secure file search...\n");
-    // Placeholder for actual implementation in the next step
-    return NULL;
+    char normalized_name[11];
+
+    if (zrbl_strlen(filename) > 12) { 
+        zrbl_puts("ERROR: Filename too long.\n");
+        return NULL;
+    }
+
+    fat_normalize_name(filename, normalized_name);
+    
+    // Placeholder: Directory traversal logic goes here
+    
+    zrbl_puts("DEBUG: Searching for: ");
+    zrbl_puts(normalized_name);
+    zrbl_puts("\n");
+    
+    return NULL; // File not found
 }

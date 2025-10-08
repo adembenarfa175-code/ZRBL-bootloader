@@ -1,41 +1,29 @@
-/* linker.ld - ZRBL Linker Script */
+/* linker.ld - Linker script for the ZRBL Bootloader */
 
-ENTRY(zrbl_main)
+ENTRY(_start)
+OUTPUT_FORMAT(elf32-i386)
 
-SECTIONS
-{
-    /* The base address where ZRBL will be loaded in memory */
-    . = 0x10000; 
+SECTIONS {
+    . = 0x7E00; /* Start address after the VBR (Volume Boot Record) */
 
-    /* .text section (Executable code) */
-    .text :
-    {
+    .text : {
         *(.text)
     }
 
-    /* .data section (Writable data) */
-    .data :
-    {
+    .data : {
         *(.data)
     }
 
-    /* .rodata section (Read-only data) */
-    .rodata :
-    {
+    .rodata : {
         *(.rodata)
     }
 
-    /* .bss section (Uninitialized data - must be zeroed) */
-    .bss :
-    {
+    .bss : {
         *(.bss)
-        . = ALIGN(4); 
     }
 
-    /* Discard unwanted sections */
-    /DISCARD/ :
-    {
-        *(.fini)
+    /DISCARD/ : {
         *(.eh_frame)
+        *(.note.GNU-stack)
     }
 }

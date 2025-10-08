@@ -1,58 +1,39 @@
-# Makefile for ZRBL Bootloader 2025.2.0.0
-#
-# Licensed under GPLv3 or later.
+# Makefile for ZRBL Bootloader v2025.3.1.0
 
-# ***************************************************************
-# Tools and Compiler Settings
-# ***************************************************************
-CC       := gcc
-LD       := ld
-AS       := nasm
-OBJCOPY  := objcopy
-CFLAGS   := -m32 -nostdinc -nostdlib -fno-stack-protector -fPIC -Wall -Wextra -std=c99
-LDFLAGS  := -melf_i386 -T linker.ld
-ASFLAGS  := -f elf
-BUILDDIR := build
+# Configuration from build_release.sh
+COMPILER = i686-elf-gcc
+ASSEMBLER = nasm
+LD = i686-elf-ld
+CFLAGS = -std=c99 -Wall -Wextra -Werror -fno-stack-protector -nostdlib -ffreestanding -O2
+ASFLAGS = -f bin
 
-# ***************************************************************
-# Files
-# ***************************************************************
-C_SRCS  := boot-driver/command-cfz.c            boot-driver/zrbl_util.c            boot-driver/fat.c            boot-driver/ext4.c
+C_FILES = boot-driver/command-cfz.c boot-driver/zrbl_util.c boot-driver/fat.c boot-driver/ext4.c
+OBJ_FILES = $(patsubst %.c, build/%.o, $(C_FILES)) build/boot.o
 
-ASM_SRCS := boot-driver/boot.asm
+TARGET = build/zrbl_bootloader.bin
 
-OBJS :=          
+all: $(TARGET)
 
-TARGET := /zrbl.elf
-FINAL_IMG := /boot.img
+# Rule for C compilation
+build/%.o: %.c boot-driver/zrbl_common.h
+	$(COMPILER) $(CFLAGS) -c $< -o $@
 
-# ***************************************************************
-# Rules
-# ***************************************************************
+# Rule for Assembly compilation
+build/boot.o: boot.asm
+	$(ASSEMBLER) $(ASFLAGS) $< -o $@
 
-.PHONY: all clean
+# Rule for Linking
+$(TARGET): $(OBJ_FILES) linker.ld
+	$(LD) -n -T linker.ld -o build/zrbl_kernel.elf $(OBJ_FILES)
+	# Extract the raw binary from the ELF file
+	objcopy -O binary build/zrbl_kernel.elf $(TARGET)
 
-all: 
-
-# C compilation rule
-/%.o: %.c | 
-	  -c $< -o 
-
-# Assembly compilation rule (for boot.asm)
-/boot.o: boot-driver/boot.asm | 
-	  $< -o 
-
-# Final linking rule
-:  linker.ld
-	  -o  
-
-# Rule to convert ELF to RAW Binary (boot image)
-: 
-	 -O binary $< 
-
-# Rule to create the build directory
-:
-	mkdir -p 
+.PHONY: clean run
 
 clean:
-	rm -rf 
+	rm -rf build/
+	
+run: all
+	# Placeholder for QEMU/VM execution command
+	echo "Ready to run the binary: $(TARGET)"
+	# qemu-system-i386 -fda $(TARGET)
