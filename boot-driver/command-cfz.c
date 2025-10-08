@@ -7,8 +7,14 @@ uint32_t g_partition_start_lba = 0;
 uint8_t g_active_drive = 0x80; 
 boot_mode_t g_boot_mode = BOOT_MODE_UNKNOWN; 
 
+// ** New FAT Global Definitions (v2025.3.2.0) **
+uint32_t g_fat_start_lba = 0;
+uint32_t g_data_start_lba = 0;
+uint32_t g_clusters_count = 0;
+uint8_t g_fat_type = 0;
+
 void zrbl_main() {
-    zrbl_puts("ZRBL Bootloader - Version 2025.3.1.0 (Secure)\n");
+    zrbl_puts("ZRBL Bootloader - Version 2025.3.2.0 (Secure)\n");
     
     if (g_boot_mode == BOOT_MODE_BIOS) {
         zrbl_puts("INFO: Running in BIOS/Legacy Mode.\n");
@@ -23,7 +29,9 @@ void zrbl_main() {
     FAT_DirEntry* boot_config = fat_find_file("BOOT.CFZ");
     
     if (boot_config != NULL) {
-        zrbl_puts("INFO: BOOT.CFZ found securely.\n");
+        zrbl_puts("INFO: BOOT.CFZ found securely. Next cluster: ");
+        // Demo usage of the new safe function
+        // uint32_t next = fat_get_next_cluster(fat_get_first_cluster(boot_config));
     } else {
         zrbl_puts("ERROR: BOOT.CFZ not found or invalid.\n");
     }

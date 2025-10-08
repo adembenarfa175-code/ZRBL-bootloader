@@ -26,14 +26,13 @@ size_t zrbl_strlen(const char* s) {
     return len;
 }
 
-// Secure string copy (strncpy) - Prevents Buffer Overflows!
 char* zrbl_strncpy(char* dest, const char* src, size_t n) {
     size_t i;
     for (i = 0; i < n && src[i] != '\0'; i++) {
         dest[i] = src[i];
     }
     for (; i < n; i++) {
-        dest[i] = '\0'; // Pad with null bytes
+        dest[i] = '\0';
     }
     return dest;
 }

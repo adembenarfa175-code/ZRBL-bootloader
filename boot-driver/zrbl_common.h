@@ -24,12 +24,11 @@ void* zrbl_memcpy(void* dest, const void* src, size_t n);
 void* zrbl_memset(void* s, int c, size_t n);
 int zrbl_strcmp(const char* s1, const char* s2);
 size_t zrbl_strlen(const char* s);
-// CRITICAL: Secure string copy
 char* zrbl_strncpy(char* dest, const char* src, size_t n); 
 void zrbl_puts(const char* s);
 
 // ===================================================
-// 3. Global Boot Environment (UEFI/BIOS Mode)
+// 3. Global Boot Environment (UEFI/BIOS Mode & FAT Globals)
 // ===================================================
 
 typedef enum {
@@ -42,11 +41,17 @@ extern boot_mode_t g_boot_mode;
 extern uint32_t g_partition_start_lba;
 extern uint8_t g_active_drive;
 
+// ** New FAT Global Declarations for Security (v2025.3.2.0) **
+extern uint32_t g_fat_start_lba;
+extern uint32_t g_data_start_lba;
+extern uint32_t g_clusters_count; // CRITICAL for Bounds Checking
+extern uint8_t g_fat_type;
+
 // ===================================================
 // 4. File System Structures (FAT) - With CRITICAL Security Fix
 // ===================================================
 
-// CRITICAL MEMORY ALIGNMENT FIX: __attribute__((packed)) ensures 32-byte size
+// CRITICAL MEMORY ALIGNMENT FIX: __attribute__((packed))
 typedef struct __attribute__((packed)) {
     uint8_t filename[8];    
     uint8_t extension[3];   
@@ -69,6 +74,7 @@ typedef struct __attribute__((packed)) {
 
 int fat_init(uint8_t drive_id, uint32_t part_start_lba);
 FAT_DirEntry* fat_find_file(const char* filename);
-
+// New Function (v2025.3.2.0)
+uint32_t fat_get_next_cluster(uint32_t cluster);
 
 #endif // ZRBL_COMMON_H
