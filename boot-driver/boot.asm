@@ -1,53 +1,53 @@
 ; /boot/zrbl/boot-driver/boot.asm - ZRBL Stage 2/3 Loader
 ;
-; يتم تجميع هذا الملف بصيغة ELF ليتم ربطه مع كود C (command-cfz.c)
+; Compiled as ELF object to be linked with C code (command-cfz.c)
 ;
-; مرخص بموجب رخصة جنو العمومية (GPLv3 أو أي إصدار لاحق).
+; Licensed under GPLv3 or later.
 ;
 
 ; ***************************************************************
-; التوجيهات الأساسية
+; Directives
 ; ***************************************************************
 
-BITS 32                 ; يجب أن نكون في وضع 32-بت (Protected Mode)
-section .text           ; قسم الكود القابل للتنفيذ
+BITS 32                 ; Must be in 32-bit Protected Mode
+section .text           ; Executable code section
 
 ; ***************************************************************
-; تعريفات خارجية وداخلية
+; External and Global Definitions
 ; ***************************************************************
 
-extern zrbl_main        ; دالة C الرئيسية (نقطة الدخول الفعلية)
-global _start           ; نقطة الدخول الأساسية لملف ELF
+extern zrbl_main        ; The main C function entry point
+global _start           ; Primary entry point for the ELF object
 
 ; ***************************************************************
-; نقطة الدخول والقفز إلى C
+; Entry Point and Jump to C
 ; ***************************************************************
 
 _start:
     ; -------------------------------------------------------------
-    ; إعداد مقاطع الذاكرة الأساسية (Segments)
+    ; Setup essential segment registers
     ; -------------------------------------------------------------
     
-    mov ax, 0x10        ; قيمة محدد مقطع البيانات (D-Segment Selector)
+    mov ax, 0x10        ; Data Segment Selector value
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     
     ; -------------------------------------------------------------
-    ; إعداد المكدس (Stack) لكود C
+    ; Setup the Stack for C code (Crucial for function calls)
     ; -------------------------------------------------------------
-    mov esp, 0x90000    ; تعيين رأس المكدس (Stack Pointer)
+    mov esp, 0x90000    ; Set the Stack Pointer to a safe memory area
 
     ; -------------------------------------------------------------
-    ; القفز إلى دالة C
+    ; Jump to the C function
     ; -------------------------------------------------------------
-    call zrbl_main      ; استدعاء الدالة الرئيسية في command-cfz.c
+    call zrbl_main      ; Call the C main function
 
     ; -------------------------------------------------------------
-    ; النهاية
+    ; Halt/End (Should not be reached in a successful boot)
     ; -------------------------------------------------------------
 .halt:
-    cli                     ; إيقاف المقاطعات (Disable Interrupts)
-    hlt                     ; إيقاف المعالج (Halt)
-    jmp .halt               ; حلقة لا نهائية
+    cli                     ; Disable Interrupts
+    hlt                     ; Halt the CPU
+    jmp .halt               ; Infinite loop for safety

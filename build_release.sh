@@ -1,57 +1,58 @@
 #!/bin/bash
-# build_release.sh - سكريبت إعداد وبناء ZRBL Bootloader 2025.2.0.0
+# build_release.sh - ZRBL Bootloader 2025.2.0.0 Setup and Build Script
 
 # ----------------------------------------------------
-# 1. إعداد الهيكل والمجلدات
+# 1. Setup Structure and Directories
 # ----------------------------------------------------
-echo "INFO: إعداد هيكل المجلدات الأساسية..."
+echo "INFO: Setting up essential directories..."
 mkdir -p build
 mkdir -p boot-driver
 
 # ----------------------------------------------------
-# 2. إنشاء وتعبئة ملفات الكود الأساسية
+# 2. Create and Populate Core Code Files
 # ----------------------------------------------------
 
-# (1) ملف: zrbl_common.h (رأس الدوال المساعدة والأنواع)
-echo "INFO: إنشاء zrbl_common.h"
+# (1) File: zrbl_common.h (Header for Utility Functions and Types)
+echo "INFO: Creating zrbl_common.h"
 cat <<EOF > boot-driver/zrbl_common.h
-// boot-driver/zrbl_common.h - الدوال المساعدة وأنواع البيانات
+// boot-driver/zrbl_common.h - Utility functions and data types for ZRBL
 #ifndef ZRBL_COMMON_H
 #define ZRBL_COMMON_H
 
-#include <stddef.h> // لتعريف size_t
+#include <stddef.h> // For size_t definition
 
-// تعريفات أنواع البيانات الأساسية لبيئة البوتلودر
+// Basic data type definitions for the bootloader environment
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long uint64_t;
 
-// دوال الذاكرة والسلاسل النصية الآمنة (يتم تنفيذها في zrbl_util.c)
+// Secure memory and string utility functions (implemented in zrbl_util.c)
 void* zrbl_memcpy(void* dest, const void* src, size_t n);
 void* zrbl_memset(void* s, int c, size_t n);
 int zrbl_strcmp(const char* s1, const char* s2);
 size_t zrbl_strlen(const char* s);
-char* zrbl_strncpy(char* dest, const char* src, size_t n);
+// SECURE function: Limits copy size to prevent Buffer Overflows (Crucial for 2025.2.0.0)
+char* zrbl_strncpy(char* dest, const char* src, size_t n); 
 
-// دالة الطباعة (تعتمد على Assembly)
+// Print function (relies on Assembly/BIOS calls)
 void zrbl_puts(const char* s);
 
-// متغيرات عامة سيتم تهيئتها في command-cfz.c
+// Global variables (Disk I/O and Partition info)
 extern uint32_t g_partition_start_lba;
 extern uint8_t g_active_drive;
 
 #endif // ZRBL_COMMON_H
 EOF
 
-# (2) ملف: zrbl_util.c (تنفيذ الدوال المساعدة الآمنة)
-echo "INFO: إنشاء zrbl_util.c (تجنب أخطاء الذاكرة)"
+# (2) File: zrbl_util.c (Implementation of Secure Utility Functions)
+echo "INFO: Creating zrbl_util.c (Implementing secure memory ops)"
 cat <<EOF > boot-driver/zrbl_util.c
-// boot-driver/zrbl_util.c - تنفيذ دوال الذاكرة والسلاسل الآمنة
+// boot-driver/zrbl_util.c - Implementation of secure memory and string utilities
 
 #include "zrbl_common.h"
 
-// ملء الذاكرة (memcpy)
+// Memory copy (memcpy)
 void* zrbl_memcpy(void* dest, const void* src, size_t n) {
     char* d = (char*)dest;
     const char* s = (const char*)src;
@@ -61,7 +62,7 @@ void* zrbl_memcpy(void* dest, const void* src, size_t n) {
     return dest;
 }
 
-// ملء الذاكرة بقيمة ثابتة (memset)
+// Memory set (memset)
 void* zrbl_memset(void* s, int c, size_t n) {
     char* p = (char*)s;
     while (n--) {
@@ -70,7 +71,7 @@ void* zrbl_memset(void* s, int c, size_t n) {
     return s;
 }
 
-// مقارنة سلسلة نصية (strcmp)
+// String comparison (strcmp)
 int zrbl_strcmp(const char* s1, const char* s2) {
     while (*s1 && (*s1 == *s2)) {
         s1++;
@@ -79,7 +80,7 @@ int zrbl_strcmp(const char* s1, const char* s2) {
     return *(const unsigned char*)s1 - *(const unsigned char*)s2;
 }
 
-// إيجاد طول السلسلة (strlen)
+// String length (strlen)
 size_t zrbl_strlen(const char* s) {
     size_t len = 0;
     while (*s++) {
@@ -88,102 +89,116 @@ size_t zrbl_strlen(const char* s) {
     return len;
 }
 
-// نسخ سلسلة نصية بأمان (strncpy) - مهم لمنع Buffer Overflows
+// Secure string copy (strncpy) - Prevents Buffer Overflows!
 char* zrbl_strncpy(char* dest, const char* src, size_t n) {
     size_t i;
+    // Copy up to n characters or until null terminator
     for (i = 0; i < n && src[i] != '\0'; i++) {
         dest[i] = src[i];
     }
+    // Pad the rest of the destination with null bytes
     for (; i < n; i++) {
         dest[i] = '\0';
     }
     return dest;
 }
 
-// تنفيذ دالة الطباعة (يجب أن يتم ربطها لاحقًا بكود Assembly)
+// Placeholder for Assembly/BIOS-based print function
 void zrbl_puts(const char* s) {
-    // هذه الدالة تعتمد على كود Assembly للوصول إلى BIOS/VGA
-    // سيتم تنفيذها لاحقاً في ملف Assembly منفصل.
+    // This function will be implemented in Assembly later for BIOS/VGA output.
 }
 EOF
 
-# (3) ملف: command-cfz.c (الدالة الرئيسية لكود C)
-echo "INFO: إنشاء command-cfz.c (الدالة الرئيسية)"
+# (3) File: command-cfz.c (Main C entry function)
+echo "INFO: Creating command-cfz.c (Main C entry point)"
 cat <<EOF > boot-driver/command-cfz.c
-// boot-driver/command-cfz.c - الدالة الرئيسية C لـ ZRBL
+// boot-driver/command-cfz.c - The main C function for ZRBL
 
 #include "zrbl_common.h"
 // #include "fat.h"
 // #include "ext4.h"
 
-// تعريف المتغيرات العامة (مهمة لدوال I/O للقرص)
+// Define global variables for disk I/O and partition info
 uint32_t g_partition_start_lba = 0;
-uint8_t g_active_drive = 0x80; // القرص الصلب الأول
+uint8_t g_active_drive = 0x80; // First hard drive (BIOS convention)
 
-// نقطة الدخول الرئيسية لكود C
+// The primary C entry point, called from boot.asm
 void zrbl_main() {
-    // 1. الترحيب بالإصدار
+    // 1. Display version information
     zrbl_puts("ZRBL Bootloader - Version 2025.2.0.0\n");
-    zrbl_puts("Initializing, focused on secure memory management...\n");
+    zrbl_puts("Initializing, focusing on secure memory management...\n");
 
-    // 2. هنا سيتم تهيئة أنظمة الملفات (fat_init, ext4_init)
+    // 2. File System Initialization (FAT, EXT4)
+    // fat_init(g_active_drive, g_partition_start_lba);
     
-    // 3. هنا سيتم قراءة ملف الإعدادات (boot.cfz) وتحليل الأوامر
+    // 3. Read settings file (boot.cfz) and parse commands
     
-    // 4. هنا سيتم تحميل النواة والقفز إليها
+    // 4. Load the kernel and jump to it
     
-    // حلقة لا نهائية (للتوقف إذا لم يتم تحميل النواة)
+    // Infinite loop (Halt if kernel loading fails)
     while (1) {
-        // يمكنك هنا عرض رسالة خطأ
+        // Error handling or halt message goes here
     }
 }
 EOF
 
-# (4) ملف: fat.c (دوال FAT) - سنضع الهيكل الأساسي الآمن الآن
-echo "INFO: إنشاء fat.c (الهيكل الأساسي الآمن)"
+# (4) File: fat.c (FAT File System Driver) - Focusing on Security
+echo "INFO: Creating fat.c (Secure FAT driver structure)"
 cat <<EOF > boot-driver/fat.c
-// boot-driver/fat.c - دعم قراءة نظام ملفات FAT الآمن
+// boot-driver/fat.c - Secure FAT file system support
 
 #include "zrbl_common.h"
-// #include "fat.h" // سيتم إنشاء ملف الرأس لاحقاً
+// #include "fat.h" // FAT-specific headers will be added here
 
-// متغيرات FAT العامة لضمان التحقق من الحدود (Bounds Checking)
-// uint32_t g_total_sectors; // مثال: لحفظ عدد القطاعات الكلي للقسم
+// Global variables for FAT partition data (crucial for Bounds Checking)
+// extern uint32_t g_total_sectors; // Example: total sectors in partition
 
-// دالة القراءة الآمنة للقطاعات (مثال للتحقق الأمني)
+/**
+ * Secure sector read function.
+ * Must ensure the LBA is within the partition bounds to prevent OOB Read.
+ * @param lba: Logical Block Address relative to the partition start.
+ * @param buffer: 512-byte buffer for the sector data.
+ */
 int fat_read_sector(uint32_t lba, void* buffer) {
-    // *** هنا يجب إضافة التحقق من أن LBA لا يتجاوز g_total_sectors ***
+    // ********* CRITICAL SECURITY CHECK *********
+    // 1. Check against the partition's maximum sector count (g_total_sectors)
     // if (lba >= g_total_sectors) { return -1; }
     
-    // حالياً، سنفترض أن هذه الدالة تستدعي دالة قراءة منخفضة المستوى (Assembly/BIOS)
+    // 2. Calculate the absolute LBA using g_partition_start_lba
+    // uint32_t absolute_lba = g_partition_start_lba + lba;
     
-    return 0;
+    // ... (Disk I/O Assembly/BIOS call goes here) ...
+    
+    return 0; // Success
 }
 
-// دالة التهيئة الأساسية لـ FAT
+/**
+ * Primary FAT initialization function.
+ * Reads the Boot Parameter Block (BPB) securely.
+ */
 int fat_init(uint8_t drive_id, uint32_t part_start_lba) {
-    // ... يتم هنا قراءة BPB والتحقق من صحة جميع القيم
-    // هذه العملية يجب أن تكون آمنة ضد قراءة البيانات خارج النطاق (OOB Read)
+    // Code to read BPB and validate all critical fields (e.g., sector size, FAT size)
+    // Validation is key to prevent crashes and exploits from malformed file systems.
     
     zrbl_puts("INFO: FAT initialization complete.\n");
     return 0;
 }
 EOF
 
-# (5) ملف: ext4.c (دوال EXT4) - هيكل فارغ
-echo "INFO: إنشاء ext4.c (هيكل فارغ)"
+# (5) File: ext4.c (EXT4 Driver Structure) - Placeholder
+echo "INFO: Creating ext4.c (Placeholder for future development)"
 cat <<EOF > boot-driver/ext4.c
-// boot-driver/ext4.c - دعم قراءة نظام ملفات EXT4
+// boot-driver/ext4.c - EXT4 file system support
 #include "zrbl_common.h"
-// سيتم تنفيذ الدوال لاحقاً
+// Implementation of EXT4 secure read functions will go here.
 EOF
 
 # ----------------------------------------------------
-# 3. ملفات الإعداد والربط
+# 3. Configuration and Linker Files
 # ----------------------------------------------------
 
-# (6) ملف: linker.ld (سكريبت الرابط)
-echo "INFO: إنشاء linker.ld"
+# (6) File: linker.ld (The Linker Script)
+echo "INFO: Creating linker.ld"
 cat <<EOF > linker.ld
 /* linker.ld - ZRBL Linker Script */
 
@@ -191,35 +206,35 @@ ENTRY(zrbl_main)
 
 SECTIONS
 {
-    /* العنوان الأساسي الذي سيبدأ عنده تحميل ZRBL في الذاكرة */
+    /* The base address where ZRBL will be loaded in memory */
     . = 0x10000; 
 
-    /* قسم النص (الكود القابل للتنفيذ) */
+    /* .text section (Executable code) */
     .text :
     {
         *(.text)
     }
 
-    /* قسم البيانات القابلة للتعديل */
+    /* .data section (Writable data) */
     .data :
     {
         *(.data)
     }
 
-    /* قسم البيانات الثابتة (للقراءة فقط) */
+    /* .rodata section (Read-only data) */
     .rodata :
     {
         *(.rodata)
     }
 
-    /* قسم .bss للبيانات غير المهيئة (يجب تصفيره في البداية) */
+    /* .bss section (Uninitialized data - must be zeroed) */
     .bss :
     {
         *(.bss)
-        . = ALIGN(4); /* ضمان المحاذاة */
+        . = ALIGN(4); 
     }
 
-    /* نهاية البرنامج */
+    /* Discard unwanted sections */
     /DISCARD/ :
     {
         *(.fini)
@@ -228,73 +243,73 @@ SECTIONS
 }
 EOF
 
-# (7) ملف: boot.asm (كود التجميع المصحح)
-echo "INFO: إنشاء boot-driver/boot.asm (مصدر خطأ CV0001)"
+# (7) File: boot.asm (The Corrected Assembly Code)
+echo "INFO: Creating boot-driver/boot.asm (Fix for CV0001)"
 cat <<EOF > boot-driver/boot.asm
 ; /boot/zrbl/boot-driver/boot.asm - ZRBL Stage 2/3 Loader
 ;
-; يتم تجميع هذا الملف بصيغة ELF ليتم ربطه مع كود C (command-cfz.c)
+; Compiled as ELF object to be linked with C code (command-cfz.c)
 ;
-; مرخص بموجب رخصة جنو العمومية (GPLv3 أو أي إصدار لاحق).
+; Licensed under GPLv3 or later.
 ;
 
 ; ***************************************************************
-; التوجيهات الأساسية
+; Directives
 ; ***************************************************************
 
-BITS 32                 ; يجب أن نكون في وضع 32-بت (Protected Mode)
-section .text           ; قسم الكود القابل للتنفيذ
+BITS 32                 ; Must be in 32-bit Protected Mode
+section .text           ; Executable code section
 
 ; ***************************************************************
-; تعريفات خارجية وداخلية
+; External and Global Definitions
 ; ***************************************************************
 
-extern zrbl_main        ; دالة C الرئيسية (نقطة الدخول الفعلية)
-global _start           ; نقطة الدخول الأساسية لملف ELF
+extern zrbl_main        ; The main C function entry point
+global _start           ; Primary entry point for the ELF object
 
 ; ***************************************************************
-; نقطة الدخول والقفز إلى C
+; Entry Point and Jump to C
 ; ***************************************************************
 
 _start:
     ; -------------------------------------------------------------
-    ; إعداد مقاطع الذاكرة الأساسية (Segments)
+    ; Setup essential segment registers
     ; -------------------------------------------------------------
     
-    mov ax, 0x10        ; قيمة محدد مقطع البيانات (D-Segment Selector)
+    mov ax, 0x10        ; Data Segment Selector value
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     
     ; -------------------------------------------------------------
-    ; إعداد المكدس (Stack) لكود C
+    ; Setup the Stack for C code (Crucial for function calls)
     ; -------------------------------------------------------------
-    mov esp, 0x90000    ; تعيين رأس المكدس (Stack Pointer)
+    mov esp, 0x90000    ; Set the Stack Pointer to a safe memory area
 
     ; -------------------------------------------------------------
-    ; القفز إلى دالة C
+    ; Jump to the C function
     ; -------------------------------------------------------------
-    call zrbl_main      ; استدعاء الدالة الرئيسية في command-cfz.c
+    call zrbl_main      ; Call the C main function
 
     ; -------------------------------------------------------------
-    ; النهاية
+    ; Halt/End (Should not be reached in a successful boot)
     ; -------------------------------------------------------------
 .halt:
-    cli                     ; إيقاف المقاطعات (Disable Interrupts)
-    hlt                     ; إيقاف المعالج (Halt)
-    jmp .halt               ; حلقة لا نهائية
+    cli                     ; Disable Interrupts
+    hlt                     ; Halt the CPU
+    jmp .halt               ; Infinite loop for safety
 EOF
 
-# (8) ملف: Makefile
-echo "INFO: إنشاء Makefile"
+# (8) File: Makefile
+echo "INFO: Creating Makefile"
 cat <<EOF > Makefile
-# Makefile لـ ZRBL Bootloader 2025.2.0.0
+# Makefile for ZRBL Bootloader 2025.2.0.0
 #
-# مرخص بموجب رخصة جنو العمومية (GPLv3 أو أي إصدار لاحق).
+# Licensed under GPLv3 or later.
 
 # ***************************************************************
-# الأدوات والمترجمات
+# Tools and Compiler Settings
 # ***************************************************************
 CC       := gcc
 LD       := ld
@@ -306,7 +321,7 @@ ASFLAGS  := -f elf
 BUILDDIR := build
 
 # ***************************************************************
-# الملفات
+# Files
 # ***************************************************************
 C_SRCS  := boot-driver/command-cfz.c \
            boot-driver/zrbl_util.c \
@@ -322,30 +337,30 @@ TARGET := $(BUILDDIR)/zrbl.elf
 FINAL_IMG := $(BUILDDIR)/boot.img
 
 # ***************************************************************
-# القواعد
+# Rules
 # ***************************************************************
 
 .PHONY: all clean
 
 all: $(FINAL_IMG)
 
-# قاعدة لتجميع ملفات C
+# C compilation rule
 $(BUILDDIR)/%.o: %.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# قاعدة لتجميع ملفات Assembly (حل خطأ CV0001)
+# Assembly compilation rule (for boot.asm)
 $(BUILDDIR)/boot.o: boot-driver/boot.asm | $(BUILDDIR)
 	$(AS) $(ASFLAGS) $< -o $@
 
-# قاعدة الربط النهائية لإنشاء ملف ELF
+# Final linking rule
 $(TARGET): $(OBJS) linker.ld
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
-# قاعدة التحويل إلى صورة ثنائية خام (RAW Binary)
+# Rule to convert ELF to RAW Binary (boot image)
 $(FINAL_IMG): $(TARGET)
 	$(OBJCOPY) -O binary $< $@
 
-# قاعدة إنشاء مجلد البناء
+# Rule to create the build directory
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
@@ -353,6 +368,6 @@ clean:
 	rm -rf $(BUILDDIR)
 EOF
 
-echo "INFO: تم إعداد جميع الملفات بنجاح. يمكنك الآن استخدام make للبناء."
-echo "INFO: نفذ الأمر: make all"
+echo "INFO: All files have been reset with English comments. ZRBL is ready for development."
+echo "INFO: You can now run: make all"
 

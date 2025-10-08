@@ -1,3 +1,3 @@
-// boot-driver/ext4.c - دعم قراءة نظام ملفات EXT4
+// boot-driver/ext4.c - EXT4 file system support
 #include "zrbl_common.h"
-// سيتم تنفيذ الدوال لاحقاً
+// Implementation of EXT4 secure read functions will go here.

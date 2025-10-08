@@ -1,9 +1,9 @@
-# Makefile لـ ZRBL Bootloader 2025.2.0.0
+# Makefile for ZRBL Bootloader 2025.2.0.0
 #
-# مرخص بموجب رخصة جنو العمومية (GPLv3 أو أي إصدار لاحق).
+# Licensed under GPLv3 or later.
 
 # ***************************************************************
-# الأدوات والمترجمات
+# Tools and Compiler Settings
 # ***************************************************************
 CC       := gcc
 LD       := ld
@@ -15,7 +15,7 @@ ASFLAGS  := -f elf
 BUILDDIR := build
 
 # ***************************************************************
-# الملفات
+# Files
 # ***************************************************************
 C_SRCS  := boot-driver/command-cfz.c            boot-driver/zrbl_util.c            boot-driver/fat.c            boot-driver/ext4.c
 
@@ -27,30 +27,30 @@ TARGET := /zrbl.elf
 FINAL_IMG := /boot.img
 
 # ***************************************************************
-# القواعد
+# Rules
 # ***************************************************************
 
 .PHONY: all clean
 
 all: 
 
-# قاعدة لتجميع ملفات C
+# C compilation rule
 /%.o: %.c | 
 	  -c $< -o 
 
-# قاعدة لتجميع ملفات Assembly (حل خطأ CV0001)
+# Assembly compilation rule (for boot.asm)
 /boot.o: boot-driver/boot.asm | 
 	  $< -o 
 
-# قاعدة الربط النهائية لإنشاء ملف ELF
+# Final linking rule
 :  linker.ld
 	  -o  
 
-# قاعدة التحويل إلى صورة ثنائية خام (RAW Binary)
+# Rule to convert ELF to RAW Binary (boot image)
 : 
 	 -O binary $< 
 
-# قاعدة إنشاء مجلد البناء
+# Rule to create the build directory
 :
 	mkdir -p 
 

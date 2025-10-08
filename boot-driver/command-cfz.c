@@ -1,27 +1,28 @@
-// boot-driver/command-cfz.c - الدالة الرئيسية C لـ ZRBL
+// boot-driver/command-cfz.c - The main C function for ZRBL
 
 #include "zrbl_common.h"
 // #include "fat.h"
 // #include "ext4.h"
 
-// تعريف المتغيرات العامة (مهمة لدوال I/O للقرص)
+// Define global variables for disk I/O and partition info
 uint32_t g_partition_start_lba = 0;
-uint8_t g_active_drive = 0x80; // القرص الصلب الأول
+uint8_t g_active_drive = 0x80; // First hard drive (BIOS convention)
 
-// نقطة الدخول الرئيسية لكود C
+// The primary C entry point, called from boot.asm
 void zrbl_main() {
-    // 1. الترحيب بالإصدار
+    // 1. Display version information
     zrbl_puts("ZRBL Bootloader - Version 2025.2.0.0\n");
-    zrbl_puts("Initializing, focused on secure memory management...\n");
+    zrbl_puts("Initializing, focusing on secure memory management...\n");
 
-    // 2. هنا سيتم تهيئة أنظمة الملفات (fat_init, ext4_init)
+    // 2. File System Initialization (FAT, EXT4)
+    // fat_init(g_active_drive, g_partition_start_lba);
     
-    // 3. هنا سيتم قراءة ملف الإعدادات (boot.cfz) وتحليل الأوامر
+    // 3. Read settings file (boot.cfz) and parse commands
     
-    // 4. هنا سيتم تحميل النواة والقفز إليها
+    // 4. Load the kernel and jump to it
     
-    // حلقة لا نهائية (للتوقف إذا لم يتم تحميل النواة)
+    // Infinite loop (Halt if kernel loading fails)
     while (1) {
-        // يمكنك هنا عرض رسالة خطأ
+        // Error handling or halt message goes here
     }
 }

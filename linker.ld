@@ -4,35 +4,35 @@ ENTRY(zrbl_main)
 
 SECTIONS
 {
-    /* العنوان الأساسي الذي سيبدأ عنده تحميل ZRBL في الذاكرة */
+    /* The base address where ZRBL will be loaded in memory */
     . = 0x10000; 
 
-    /* قسم النص (الكود القابل للتنفيذ) */
+    /* .text section (Executable code) */
     .text :
     {
         *(.text)
     }
 
-    /* قسم البيانات القابلة للتعديل */
+    /* .data section (Writable data) */
     .data :
     {
         *(.data)
     }
 
-    /* قسم البيانات الثابتة (للقراءة فقط) */
+    /* .rodata section (Read-only data) */
     .rodata :
     {
         *(.rodata)
     }
 
-    /* قسم .bss للبيانات غير المهيئة (يجب تصفيره في البداية) */
+    /* .bss section (Uninitialized data - must be zeroed) */
     .bss :
     {
         *(.bss)
-        . = ALIGN(4); /* ضمان المحاذاة */
+        . = ALIGN(4); 
     }
 
-    /* نهاية البرنامج */
+    /* Discard unwanted sections */
     /DISCARD/ :
     {
         *(.fini)
