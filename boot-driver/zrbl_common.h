@@ -1,28 +1,78 @@
-// boot-driver/zrbl_common.h - Utility functions and data types for ZRBL
+// boot-driver/zrbl_common.h - Global definitions, types, and secure utilities for ZRBL
 #ifndef ZRBL_COMMON_H
 #define ZRBL_COMMON_H
 
 #include <stddef.h> // For size_t definition
 
-// Basic data type definitions for the bootloader environment
+// ===================================================
+// 1. Core Data Types (Platform Independent)
+// ===================================================
+
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned long long uint64_t;
+typedef uint8_t bool;
+#define TRUE 1
+#define FALSE 0
 
-// Secure memory and string utility functions (implemented in zrbl_util.c)
+// ===================================================
+// 2. Secure Memory and String Utilities
+// ===================================================
+
+// Secure memory operations (defined in zrbl_util.c)
 void* zrbl_memcpy(void* dest, const void* src, size_t n);
 void* zrbl_memset(void* s, int c, size_t n);
 int zrbl_strcmp(const char* s1, const char* s2);
 size_t zrbl_strlen(const char* s);
-// SECURE function: Limits copy size to prevent Buffer Overflows (Crucial for 2025.2.0.0)
+// CRITICAL: Secure string copy to prevent Buffer Overflows
 char* zrbl_strncpy(char* dest, const char* src, size_t n); 
-
-// Print function (relies on Assembly/BIOS calls)
 void zrbl_puts(const char* s);
 
-// Global variables (Disk I/O and Partition info)
+// ===================================================
+// 3. Global Boot Environment (I/O, UEFI/BIOS Mode)
+// ===================================================
+
+// Global state variable to determine the execution environment
+typedef enum {
+    BOOT_MODE_BIOS,
+    BOOT_MODE_UEFI,
+    BOOT_MODE_UNKNOWN
+} boot_mode_t;
+
+extern boot_mode_t g_boot_mode; // Will be set by Assembly/UEFI entry code
+
 extern uint32_t g_partition_start_lba;
 extern uint8_t g_active_drive;
+
+// ===================================================
+// 4. File System Structures (FAT)
+// ===================================================
+
+// CRITICAL MEMORY ALIGNMENT FIX: Use __attribute__((packed)) to ensure the size is exactly 32 bytes.
+typedef struct __attribute__((packed)) {
+    uint8_t filename[8];    
+    uint8_t extension[3];   
+    uint8_t attributes;     
+    uint8_t reserved;       
+    uint8_t cration_time_ms;
+    uint16_t creation_time; 
+    uint16_t creation_date; 
+    uint16_t last_access_date; 
+    uint16_t first_cluster_high; 
+    uint16_t last_mod_time; 
+    uint16_t last_mod_date; 
+    uint16_t first_cluster_low;  
+    uint32_t file_size;     
+} FAT_DirEntry; // Total size MUST be 32 bytes
+
+// ===================================================
+// 5. File System Functions (Declared)
+// ===================================================
+
+int fat_init(uint8_t drive_id, uint32_t part_start_lba);
+// CRITICAL: Safe function to find a file (prevents name buffer overflow)
+FAT_DirEntry* fat_find_file(const char* filename);
+
 
 #endif // ZRBL_COMMON_H

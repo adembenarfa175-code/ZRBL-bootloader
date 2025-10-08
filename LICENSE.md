@@ -1,9 +1,17 @@
-1. Anyone can copy, modify and distribute this software.
-2. You have to include the license and copyright notice with each and every distribution.
-3. You can use this software privately.
-4. You can use this software for commercial purposes.
-5. If you dare build your business solely from this code, you risk open-sourcing the whole code base.
-6. If you modify it, you have to indicate changes made to the code.
-7. Any modifications of this code base MUST be distributed with the same license, GPLv3.
-8. This software is provided without warranty.
-9. The software author or license can not be held liable for any damages inflicted by the software.
+# ZRBL Bootloader License - GNU General Public License v3.0
+
+ZRBL (Zahra Boot Loader) Copyright (C) 2025 adembenarfa175-code
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+

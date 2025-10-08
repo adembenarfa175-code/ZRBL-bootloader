@@ -1,10 +1,10 @@
 // boot-driver/fat.c - Secure FAT file system support
 
 #include "zrbl_common.h"
-// #include "fat.h" // FAT-specific headers will be added here
 
 // Global variables for FAT partition data (crucial for Bounds Checking)
 // extern uint32_t g_total_sectors; // Example: total sectors in partition
+// extern uint16_t g_root_dir_sectors;
 
 /**
  * Secure sector read function.
@@ -35,4 +35,16 @@ int fat_init(uint8_t drive_id, uint32_t part_start_lba) {
     
     zrbl_puts("INFO: FAT initialization complete.\n");
     return 0;
+}
+
+/**
+ * FAT_DirEntry* fat_find_file(const char* filename)
+ * CRITICAL FUNCTION: Searches for a file in the root directory securely.
+ * Implementation will be added in the next step, focusing on name validation
+ * and safe directory traversal to prevent buffer overflows.
+ */
+FAT_DirEntry* fat_find_file(const char* filename) {
+    zrbl_puts("DEBUG: Starting secure file search...\n");
+    // Placeholder for actual implementation in the next step
+    return NULL;
 }
