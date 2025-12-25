@@ -1,35 +1,28 @@
-# Makefile for ZRBL Bootloader v2025.3.3.0
+# ZRBL v2025.5.0.0 Makefile
+ARCH ?= x86
+dir-install ?= .
 
-# Configuration
-COMPILER = i686-elf-gcc
-ASSEMBLER = nasm
-LD = i686-elf-ld
-CFLAGS = -std=c99 -Wall -Wextra -Werror -fno-stack-protector -nostdlib -ffreestanding -O2 -g
-ASFLAGS = -f bin
+CC = i686-elf-gcc
+OBJCOPY = i686-elf-objcopy
+CFLAGS = -std=c99 -Wall -ffreestanding -nostdlib -O2 -Icommon
 
-# UPDATED: Added boot-driver/cfz_parser.c
-C_FILES = boot-driver/command-cfz.c boot-driver/zrbl_util.c boot-driver/fat.c boot-driver/ext4.c boot-driver/cfz_parser.c
-OBJ_FILES = $(patsubst %.c, build/%.o, $(C_FILES)) build/boot.o
+# Component Source
+SRCS = common/*.c kernel/*.c arch/$(ARCH)/mbr/*.c
 
-TARGET = build/zrbl_bootloader.bin
+all: clean build_all
 
-all: $(TARGET)
+build_all:
+	@mkdir -p build
+	nasm -f bin arch/x86/mbr/boot.asm -o build/zrbl1.bin
+	$(CC) $(CFLAGS) $(SRCS) -o build/kernel.elf
+	$(OBJCOPY) -O binary build/kernel.elf build/zrbl2.bin
 
-build/%.o: %.c boot-driver/zrbl_common.h
-	$(COMPILER) $(CFLAGS) -c $< -o $@
-
-build/boot.o: boot.asm
-	$(ASSEMBLER) $(ASFLAGS) $< -o $@
-
-$(TARGET): $(OBJ_FILES) linker.ld
-	$(LD) -n -T linker.ld -o build/zrbl_kernel.elf $(OBJ_FILES)
-	objcopy -O binary build/zrbl_kernel.elf $(TARGET)
-
-.PHONY: clean run
+install: build_all
+	@if [ -z "$(dir-install)" ] || [ "$(dir-install)" = "." ]; then echo "Error: Set dir-install!"; exit 1; fi
+	mkdir -p $(dir-install)/boot/zrbl/img
+	cp build/zrbl1.bin build/zrbl2.bin $(dir-install)/boot/zrbl/
+	cp -r img/* $(dir-install)/boot/zrbl/img/
+	@echo "ZRBL v2025.5.0.0 Installed Successfully to $(dir-install)"
 
 clean:
-	rm -rf build/
-	
-run: all
-	echo "Ready to run the binary: $(TARGET)"
-	# qemu-system-i386 -fda $(TARGET)
+	rm -rf build/*

@@ -1,0 +1,11 @@
+# Build outputs
+build/
+*.bin
+*.elf
+*.o
+*.iso
+img/**/*.bmp
+
+# Tools and Temp
+*.log
+.DS_Store
