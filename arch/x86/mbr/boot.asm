@@ -1,25 +1,20 @@
 [bits 16]
 [org 0x7c00]
-_start:
+jmp short start
+nop
+db "ZRBL6.3 " ; OEM ID
+start:
+    cli
     xor ax, ax
     mov ds, ax
-    mov es, ax
     mov ss, ax
     mov sp, 0x7c00
-    mov [boot_drive], dl
-    mov bx, 0x8000
-    mov ah, 0x02
-    mov al, 20
-    mov ch, 0x00
-    mov dh, 0x00
-    mov cl, 0x02
-    mov dl, [boot_drive]
-    int 0x13
-    jc error
-    jmp 0x0000:0x8000
-error:
-    hlt
-    jmp error
-boot_drive: db 0
+    sti
+    mov si, stage2_msg
+    call print
+    jmp 0x0800:0000
+print: lodsb | or al, al | jz .d | mov ah, 0x0e | int 0x10 | jmp print
+.d: ret
+stage2_msg db "ZRBL v2025.6.3 x86 MBR OK", 0
 times 510-($-$$) db 0
 dw 0xaa55

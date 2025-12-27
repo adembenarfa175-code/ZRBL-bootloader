@@ -1,13 +1,13 @@
-#ifndef ZRBL_COMMON_H
-#define ZRBL_COMMON_H
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned long long uint64_t;
-typedef uint32_t size_t;
-size_t zrbl_strlen(const char* s);
-void* zrbl_memset(void* s, int c, size_t n);
-void zrbl_puts(const char* s);
-void zrbl_secure_clear_memory(void* s, size_t z);
-void zrbl_main(void);
+#ifndef ZRBL_GLOBAL_H
+#define ZRBL_GLOBAL_H
+#include <stdint.h>
+#define ZRBL_VERSION "2025.6.3"
+#define MEM_BASE 0x100000
+#define MAX_FILES 64
+typedef struct {
+    uint64_t total_mem;
+    uint32_t boot_drive;
+    uint32_t status;
+} zrbl_state_t;
+void zrbl_log(const char* msg);
 #endif
