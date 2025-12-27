@@ -26,7 +26,7 @@ print_string:
 .done:
     ret
 
-stage2_msg db "ZRBL v2025.6.5 Booting...", 0
+stage2_msg db "ZRBL v2025.6.7-LTS Booting...", 0
 
 times 510-($-$$) db 0
 dw 0xaa55

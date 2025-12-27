@@ -8,6 +8,6 @@ void _start(void) {
 }
 
 void zrbl_kernel_main(void) {
-    zrbl_log("ZRBL Kernel Active v2025.6.5.3");
+    zrbl_log("ZRBL Kernel Active v2025.6.7-LTS");
     while(1);
 }
