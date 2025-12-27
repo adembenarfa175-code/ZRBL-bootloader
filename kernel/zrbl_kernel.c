@@ -1,11 +1,13 @@
 #include "../common/zrbl_common.h"
 
-// Define the entry point for the linker
-void _start() {
+/* Forward declaration for v2025.6.5.3 */
+void zrbl_kernel_main(void);
+
+void _start(void) {
     zrbl_kernel_main();
 }
 
-void zrbl_kernel_main() {
-    zrbl_log("ZRBL Kernel Active v2025.6.5.2");
+void zrbl_kernel_main(void) {
+    zrbl_log("ZRBL Kernel Active v2025.6.5.3");
     while(1);
 }
