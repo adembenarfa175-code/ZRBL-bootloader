@@ -21,5 +21,5 @@ error:
     hlt
     jmp error
 boot_drive: db 0
-fill: times 510-($-$$) db 0
+times 510-($-$$) db 0
 dw 0xaa55

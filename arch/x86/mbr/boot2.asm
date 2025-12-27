@@ -1,6 +1,7 @@
 [bits 16]
-[org 0x8000]
+section .text
 extern zrbl_main
-entry:
+global _start
+_start:
     call zrbl_main
     hlt

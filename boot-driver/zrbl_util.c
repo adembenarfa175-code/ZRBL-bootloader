@@ -13,5 +13,5 @@ void zrbl_puts(const char* s) {
 void zrbl_secure_clear_memory(void* s, size_t z) {
     if(s==0 || z==0) return;
     zrbl_memset(s, 0, z);
-    zrbl_puts("SECURE CLEAR OK ");
+    zrbl_puts("[MEM_CLEARED] ");
 }
