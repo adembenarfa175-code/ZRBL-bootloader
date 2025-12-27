@@ -1,41 +1,20 @@
-# ----------------------------------------------------------------------
-# /boot/zrbl/boot.cfz - ملف إعداد ZRBL الرئيسي
-# هذا الملف يحدد خيارات الإقلاع التي سيعرضها ZRBL للمستخدم.
-# ----------------------------------------------------------------------
+# /boot/zrbl/boot.cfz - Main ZRBL Configuration File
+# This file defines the boot options displayed by ZRBL to the user.
 
-# الإدخال الأول: نظام Linux الأساسي
-[entry]
-    # الاسم الذي سيظهر في قائمة ZRBL
-    name=ZRBL Linux Main OS
+[linux_os]
+    title = "Linux Kernel v6.x"
+    type = "kernel"
+    path = "/boot/vmlinuz-linux"
+    initrd = "/boot/initramfs-linux.img"
+    options = "root=PARTUUID=xxxx rw quiet"
 
-    # نوع الإدخال (kernel: للإقلاع المباشر للنواة، chain: للتحويل إلى بوت لودر آخر)
-    type=kernel
+[maintenance]
+    title = "Recovery Mode"
+    type = "kernel"
+    path = "/boot/vmlinuz-linux"
+    options = "root=PARTUUID=xxxx rw single"
 
-    # المسار إلى ملف النواة (نستخدم المسار الذي حددته)
-    kernel_path=/bin/vmlinuz
-    
-    # المسار إلى Init Ram Disk (اختياري)
-    initrd_path=/boot/initrd.img
-
-    # خيارات سطر الأوامر التي يتم تمريرها إلى النواة
-    cmdline=root=/dev/sda1 ro quiet console=tty0
-[end]
-
-# الإدخال الثاني: وضع صيانة (اختياري)
-[entry]
-    name=ZRBL Maintenance Mode
-    type=kernel
-    kernel_path=/bin/vmlinuz
-    initrd_path=/boot/initrd.img.recovery
-    cmdline=root=/dev/sda1 ro single
-[end]
-
-# الإدخال الثالث: تحويل الإقلاع إلى بوت لودر Windows (مثال)
-[entry]
-    name=Chainload Windows
-    type=chain
-    # رقم محرك الأقراص ونقطة التحميل (يجب أن يتم تحديدها بالقطاع أو القسم)
-    chain_device=hd0
-    chain_sector=0x80
-[end]
-
+[windows_os]
+    title = "Windows Boot Manager"
+    type = "chain"
+    target = "hd0,msdos1"
