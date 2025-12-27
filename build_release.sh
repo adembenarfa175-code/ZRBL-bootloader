@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="2025.6.5.3"
+VERSION="2025.6.7-LTS"
 OUT_DIR="build"
 DISK_IMG="$OUT_DIR/zrbl_disk.img"
 TOOLCHAIN_BIN="$HOME/../usr/tdt-toolchain/x86_64-linux-gnu/bin"
