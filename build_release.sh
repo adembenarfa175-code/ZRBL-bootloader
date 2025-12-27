@@ -1,112 +1,136 @@
 #!/bin/bash
-# ZRBL v2025.5.0.0 - Golden Release
-# Multi-Stage Boot: ZRBL1 -> ZRBL2 (Micro-Kernel) -> OS
+# ZRBL v2025.6.0.0 - Stable Release Build
+# Last Update: 2025-12-26
 
-echo "--- Deploying ZRBL v2025.5.0.0: The Ultimate Boot Experience ---"
+set -e
 
-# 1. Structure the System
-mkdir -p kernel/drivers kernel/gui kernel/iso img/{user,dev,kids} build common
+COMPILER="x86_64-linux-gnu-clang"
+ASSEMBLER="nasm"
+LINKER="x86_64-linux-gnu-ld"
+OBJCOPY="x86_64-linux-gnu-objcopy"
+CFLAGS="-std=c99 -m32 -Wall -Wextra -Werror -fno-stack-protector -nostdlib -ffreestanding -O2"
+LDFLAGS="-m elf_i386 -T linker.ld"
 
-# 2. Update Global Header with ISO & Partition Intelligence
-cat <<EOF > common/zrbl_common.h
+mkdir -p build/boot-driver
+mkdir -p common
+mkdir -p arch/x86/mbr
+
+# 1. Header Synchronization
+cat <<EOF > boot-driver/zrbl_common.h
 #ifndef ZRBL_COMMON_H
 #define ZRBL_COMMON_H
-
-#include <stddef.h>
-
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
-
-/* Partition & ISO Constants */
-#define MBR_TABLE_OFFSET 0x1BE
-#define ISO_MAGIC "CD001"
-#define CTRL_I_KEY 0x09
-
-/* GUI Themes */
-typedef enum { THEME_USER, THEME_DEV, THEME_KIDS } zrbl_theme_t;
-
-void kernel_main();
-void scan_partitions();
-void load_gui(zrbl_theme_t theme);
-void mount_iso_loopback(const char* iso_path);
-
+typedef unsigned long long uint64_t;
+typedef uint32_t size_t;
+size_t zrbl_strlen(const char* s);
+void* zrbl_memset(void* s, int c, size_t n);
+void zrbl_puts(const char* s);
+void zrbl_secure_clear_memory(void* s, size_t z);
+void zrbl_main(void);
 #endif
 EOF
 
-# 3. The Discovery & ISO Driver (kernel/iso_discovery.c)
-cat <<EOF > kernel/iso_discovery.c
-#include "../common/zrbl_common.h"
+cp boot-driver/zrbl_common.h common/zrbl_common.h
 
-void scan_partitions() {
-    arch_puts("[v2025.5.0.0] Scanning for Bootable Partitions...\n");
-    // Logic to scan MBR/GPT and look for kernels (vmlinuz, bootmgfw.efi)
+# 2. C Core Logic (VGA & Memory Safety)
+cat <<EOF > boot-driver/zrbl_util.c
+#include "zrbl_common.h"
+size_t zrbl_strlen(const char* s) { size_t l=0; while(s[l]) l++; return l; }
+void* zrbl_memset(void* s, int c, size_t n) {
+    unsigned char* p=(unsigned char*)s; while(n--) *p++=(unsigned char)c; return s;
 }
-
-void mount_iso_loopback(const char* iso_path) {
-    arch_puts("Mounting ISO: ");
-    arch_puts(iso_path);
-    arch_puts("\nEmulating Virtual CD-ROM Drive...\n");
-}
-EOF
-
-# 4. The Micro-Kernel Logic (kernel/zrbl_kernel.c)
-cat <<EOF > kernel/zrbl_kernel.c
-#include "../common/zrbl_common.h"
-
-void kernel_main() {
-    arch_puts("ZRBL Micro-Kernel v2025.5.0.0 Initialized.\n");
-    
-    // Auto-detect systems
-    scan_partitions();
-
-    // Check for CTRL+i (Simplified logic)
-    arch_puts("Press CTRL+i for ISO Menu (20s timeout)...\n");
-
-    // Load Default Theme (User Mode)
-    load_gui(THEME_USER);
-}
-
-void load_gui(zrbl_theme_t theme) {
-    switch(theme) {
-        case THEME_USER: arch_puts("Loading Theme: User [/boot/zrbl/img/user.bmp]\n"); break;
-        case THEME_DEV:  arch_puts("Loading Theme: Dev  [/boot/zrbl/img/dev.bmp]\n"); break;
-        case THEME_KIDS: arch_puts("Loading Theme: Kids [/boot/zrbl/img/kids.bmp]\n"); break;
+void zrbl_puts(const char* s) {
+    unsigned short* vga = (unsigned short*)0xB8000;
+    static int pos = 0;
+    for (int i = 0; s[i] != '\0'; i++) {
+        vga[pos++] = (unsigned short)s[i] | (0x0F << 8);
     }
 }
+void zrbl_secure_clear_memory(void* s, size_t z) {
+    if(s==0 || z==0) return;
+    zrbl_memset(s, 0, z);
+    zrbl_puts("[MEM_CLEARED] ");
+}
 EOF
 
-# 5. Master Makefile for v2025.5.0.0
-cat <<EOF > Makefile
-# ZRBL v2025.5.0.0 Makefile
-ARCH ?= x86
-dir-install ?= .
-
-CC = i686-elf-gcc
-OBJCOPY = i686-elf-objcopy
-CFLAGS = -std=c99 -Wall -ffreestanding -nostdlib -O2 -Icommon
-
-# Component Source
-SRCS = common/*.c kernel/*.c arch/\$(ARCH)/mbr/*.c
-
-all: clean build_all
-
-build_all:
-	@mkdir -p build
-	nasm -f bin arch/x86/mbr/boot.asm -o build/zrbl1.bin
-	\$(CC) \$(CFLAGS) \$(SRCS) -o build/kernel.elf
-	\$(OBJCOPY) -O binary build/kernel.elf build/zrbl2.bin
-
-install: build_all
-	@if [ -z "\$(dir-install)" ] || [ "\$(dir-install)" = "." ]; then echo "Error: Set dir-install!"; exit 1; fi
-	mkdir -p \$(dir-install)/boot/zrbl/img
-	cp build/zrbl1.bin build/zrbl2.bin \$(dir-install)/boot/zrbl/
-	cp -r img/* \$(dir-install)/boot/zrbl/img/
-	@echo "ZRBL v2025.5.0.0 Installed Successfully to \$(dir-install)"
-
-clean:
-	rm -rf build/*
+cat <<EOF > common/zrbl_main.c
+#include "zrbl_common.h"
+void zrbl_main(void) {
+    zrbl_puts("ZRBL_V2025.6_LOADED_SUCCESSFULLY ");
+    zrbl_secure_clear_memory((void*)0x100000, 0x1000);
+    while(1);
+}
 EOF
 
-echo "--- ZRBL v2025.5.0.0 is Ready for Deployment ---"
+# 3. Assembly Stages (Stage 1 & Stage 2)
+cat <<EOF > arch/x86/mbr/boot.asm
+[bits 16]
+[org 0x7c00]
+_start:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7c00
+    mov [boot_drive], dl
+    mov bx, 0x8000
+    mov ah, 0x02
+    mov al, 20
+    mov ch, 0x00
+    mov dh, 0x00
+    mov cl, 0x02
+    mov dl, [boot_drive]
+    int 0x13
+    jc error
+    jmp 0x0000:0x8000
+error:
+    hlt
+    jmp error
+boot_drive: db 0
+times 510-(\$-\$\$) db 0
+dw 0xaa55
+EOF
+
+cat <<EOF > arch/x86/mbr/boot2.asm
+[bits 16]
+section .text
+extern zrbl_main
+global _start
+_start:
+    call zrbl_main
+    hlt
+EOF
+
+# 4. Linker Configuration
+cat <<EOF > linker.ld
+ENTRY(_start)
+SECTIONS
+{
+    . = 0x8000;
+    .text : { *(.text) }
+    .data : { *(.data) }
+    .bss  : { *(.bss)  }
+}
+EOF
+
+# 5. Build Execution
+rm -rf build && mkdir -p build/boot-driver
+$ASSEMBLER -f bin arch/x86/mbr/boot.asm -o build/zrbl1-boot.bin
+$ASSEMBLER -f elf32 arch/x86/mbr/boot2.asm -o build/boot2.o
+$COMPILER $CFLAGS -c boot-driver/zrbl_util.c -o build/boot-driver/zrbl_util.o
+$COMPILER $CFLAGS -c common/zrbl_main.c -o build/zrbl_main.o
+$LINKER $LDFLAGS -o build/zrbl_core.elf build/boot2.o build/zrbl_main.o build/boot-driver/*.o
+$OBJCOPY -O binary build/zrbl_core.elf build/zrbl2-core-boot23.bin
+
+# 6. Disk Image Creation
+dd if=/dev/zero of=build/zrbl_disk.img bs=512 count=2880 status=none
+dd if=build/zrbl1-boot.bin of=build/zrbl_disk.img conv=notrunc status=none
+dd if=build/zrbl2-core-boot23.bin of=build/zrbl_disk.img seek=1 conv=notrunc status=none
+
+echo "------------------------------------------------"
+echo "ZRBL BUILD SUCCESSFUL - VERSION 2025.6.0.0"
+echo "READY FOR TESTING ON 2025/12/27"
+echo "------------------------------------------------"
 
